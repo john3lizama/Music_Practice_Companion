@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+python-multipart
+aiofiles
+
+numpy
+scipy
+librosa
+soundfile
+matplotlib
+sqlalchemy
+
+python-dotenv
+pydantic
+fastapi-users[sqlalchemy]
+aiosqlite
