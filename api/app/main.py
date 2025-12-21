@@ -1,17 +1,28 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile, Depends, Form
 from app.routes.analyze import router as analyze_router
 from app.routes.sessions import router as sessions_router
+from app.database.session import Post, get_async_session, create_db_and_tables
+from sqlalchemy.ext.asyncio import AsyncSession
+from contextlib import asynccontextmanager
+from sqlalchemy import select
 
 
 from app.schemas.session import SessionCreate, SessionUpdate, PostCreate
 # Importing FastAPI and routers for different API endpoints
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Create database and tables
+    await create_db_and_tables()
+    yield
+    # Shutdown: Any cleanup can be done here if necessary
 
 # creating FastAPI instance
-app = FastAPI(title="Music Practice Companion API")
+app = FastAPI(title="Music Practice Companion API", lifespan=lifespan)
 
-session_id = 0
-sessions = {}
+# Including routers for different API endpoints
+app.include_router(analyze_router)
+
 
 # Include routers for different API endpoints
 # This modular approach helps in organizing the codebase
@@ -26,48 +37,60 @@ sessions = {}
 
 
 # Post / Create endpoints for audio analysis
-@app.post("/analyze/audio")
-async def analyze_audio():
-    return await analyze_router.analyze_audio()
-
-@app.post("/analyze/audio/upload")
-async def analyze_audio_upload(file: bytes):
-    return await analyze_router.analyze_audio_endpoint(file)
-
-# Creating a new post
-@app.post("/sessions")
-async def create_session(post: PostCreate) -> PostCreate:
-    new_post = {"title": post.title, "content": post.content}
-    return new_post 
+@app.post("/upload")
+async def upload_audio(
+    file: UploadFile = File(...),
+    caption: str = Form(""),
+    #dependency injection for database session
+    session: AsyncSession = Depends(get_async_session)
+): 
+    post = Post(
+        title=file.filename,
+        notes=caption,
+        file_type=file.content_type,
+        content=await file.read()
+    )
+    session.add(post)
+    await session.commit()
+    await session.refresh(post)
+    return {
+        "id": post.id,
+        "title": post.title,
+        "notes": post.notes,
+        "file_type": post.file_type,
+        "created_at": post.created_at.isoformat()
+    }
 
 ################################################################
 
 # Get / Read endpoints for session management
-@app.get("/sessions/{session_id}")
-async def get_session(session_id: int) -> PostCreate:
-    if session_id not in sessions:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return await sessions_router.get_session(session_id)
+@app.get("/feed")
+async def get_feed(
+    session: AsyncSession = Depends(get_async_session)
+):
+    # SQL query to get all posts ordered by creation date descending
+    result = await session.execute(select(Post).order_by(Post.created_at.desc()))
+    posts = [row[0] for row in result.all()]
+
+    posts_data = []
+    for post in posts:
+        posts_data.append({
+            "id": post.id,
+            "title": post.title,
+            "notes": post.notes,
+            "file_type": post.file_type,
+            "created_at": post.created_at.isoformat()
+        })
+    return {"posts": posts_data}
+
 
 ################################################################
 
 # Put / Update endpoints for session updates
 
-# Getting target session ID from path
-@app.put("/sessions/{session_id}")
-async def update_session(session_id: int):
-    return await sessions_router.update_session(session_id)
 
-# Getting all the sessions 
-@app.get("/sessions")
-def get_all_sessions():
-    return sessions
 
 ################################################################
 
 
 # Delete endpoints for session removal
-@app.delete("/sessions/{session_id}")
-async def delete_session(session_id: int):
-    return await sessions_router.delete_session(session_id)
-

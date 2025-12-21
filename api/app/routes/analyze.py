@@ -1,22 +1,31 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
-import uuid
+from pathlib import Path
+import re
 
-router = APIRouter(tags=["analyze"])
+router = APIRouter()
 
-def analyze_audio():
-    return {"message": "Audio analysis endpoint"}
+UPLOAD_DIR = Path("app/outputs/uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+def safe_filename(name: str) -> str:
+    name = re.sub(r"[^a-zA-Z0-9._-]", "_", name.strip())
+    return name or "audio_upload"
 
+@router.post("/upload")
+async def upload_audio(file: UploadFile = File(...)):
+    if not file.content_type or not file.content_type.startswith("audio/"):
+        raise HTTPException(status_code=400, detail=f"Not audio: {file.content_type}")
 
-@router.post("/analyze/audio")
-async def analyze_audio_endpoint(file: UploadFile = File(...)):
-    if not file.content_type.startswith("audio/"):
-        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an audio file.")
+    data = await file.read()
 
-    # Simulate analysis process
-    analysis_id = str(uuid.uuid4())
+    out_path = UPLOAD_DIR / safe_filename(file.filename)
+    out_path.write_bytes(data)
+
+    # ✅ return only JSON-serializable stuff
     return {
-        "analysis_id": analysis_id,
+        "message": "uploaded",
         "filename": file.filename,
-        "status": "Analysis started"
+        "saved_as": str(out_path),
+        "content_type": file.content_type,
+        "size_bytes": len(data),
     }
