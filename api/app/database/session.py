@@ -5,38 +5,31 @@ from sqlalchemy import create_engine
 from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
+from fastapi_users.db import SQLAlchemyBaseUserTableUUID, SQLAlchemyUserDatabase
+from fastapi import Depends
+from pathlib import Path
+from ..config import settings
 
-DATABASE_URL = "sqlite+aiosqlite:///./test.db"
+BASE_DIR = Path(__file__).resolve().parents[2]  # goes to api/
+DB_PATH = BASE_DIR / "test.db"
+
+DATABASE_URL = f"sqlite+aiosqlite:///{DB_PATH.as_posix()}"
+SQLALCHEMY_DATABASE_URL = f'postgresql://{settings.DATABASE_USERNAME}:{settings.DATABASE_PASSWORD}@{settings.DATABASE_HOSTNAME}:{settings.DATABASE_PORT}/{settings.DATABASE_NAME}'
+
+
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 
 class Base(DeclarativeBase):
     pass
 
-# Define the base class for declarative models
-# Creating the table format
-class Post(Base):
-    __tablename__ = "posts"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    title = Column(String, nullable=False)
-    notes = Column(Text)
-    file_type = Column(String, nullable=False)
-    content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-# Create the asynchronous engine and session maker
-engine = create_async_engine(DATABASE_URL)
-
-async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
-
-# Gets all of the classes inherited from DeclaritiveBase
-# & Creates them into the database
-async def create_db_and_tables():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-# Gets an asynchronous session
-async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_maker() as session:
-        yield session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
