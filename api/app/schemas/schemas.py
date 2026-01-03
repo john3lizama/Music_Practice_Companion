@@ -1,8 +1,9 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, conint
 from fastapi_users import schemas
 from uuid import UUID
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
+
 
 ############################################################################################################
 
@@ -76,3 +77,9 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     id: Optional[int] = None
+
+############################################################################################################
+
+class Vote(BaseModel):
+    session_id: int
+    dir: Literal[0, 1]
