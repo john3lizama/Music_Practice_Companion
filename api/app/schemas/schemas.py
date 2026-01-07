@@ -3,8 +3,8 @@ from fastapi_users import schemas
 from uuid import UUID
 from typing import Optional, Literal
 from datetime import datetime
-
-
+#basemodel == schemas
+                                # USER SCHEMAS
 ############################################################################################################
 
 class UserBase(BaseModel):
@@ -16,8 +16,7 @@ class UserBase(BaseModel):
 class UserOut(BaseModel):
     id: int
     email: str
-    class Config:
-        model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserUpdate(schemas.BaseUserUpdate):
@@ -27,9 +26,11 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+
+                                # CRUD SCHEMAS
 ############################################################################################################
 
-class PostBase():
+class PostBase(BaseModel):
     id: UUID
     user_id: Optional[UUID] = None
     title: str
@@ -58,8 +59,7 @@ class PostCreateOut(BaseModel):
     owner_id: int
     owner: UserOut
     #tells pydantic to ignore its not dict, and to convert it
-    class Config:
-        model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True)
 
 class SessionCreate(BaseModel):
     user_id: int
@@ -69,6 +69,13 @@ class SessionUpdate(BaseModel):
     status: str
     progress: float
 
+
+class SessionListOut(BaseModel):
+    session: PostCreateOut
+    likes: int
+
+
+                                # TOKEN SCHEMAS
 ############################################################################################################
 
 class Token(BaseModel):
@@ -78,6 +85,8 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     id: Optional[int] = None
 
+
+                                # VOTES/LIKES SCHEMA
 ############################################################################################################
 
 class Vote(BaseModel):

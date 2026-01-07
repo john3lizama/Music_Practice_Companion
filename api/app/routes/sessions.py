@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, Response, status
-from ..main import Session
-from ..schemas.schemas import PostCreate, PostBase, PostCreateOut, PostOut
-from .. import models, oauth2
 from typing import List, Optional
+from sqlalchemy import func
+from ..main import Session
+from ..schemas.schemas import PostCreate, PostBase, PostCreateOut, PostOut, SessionListOut
+from .. import models, oauth2
 from app.database.session import get_db
 
 
@@ -19,12 +20,15 @@ async def create_session(post: PostCreate, db : Session = Depends(get_db),
     return created_session
 
 #allows query parameters
-@router.get("/", response_model= List[PostCreateOut])
+@router.get("/", response_model= List[SessionListOut])
 async def get_all_sessions(db : Session = Depends(get_db), 
-        user_id : int = Depends(oauth2.get_current_user), limit=10, skip=0,
+        user_id = Depends(oauth2.get_current_user), limit=10, skip=0,
         search: Optional[str]=""):
-    session_lim_15 = db.query(models.Sessions).filter(models.Sessions.title.contains(search)).limit(limit).offset(skip).all()
-    return session_lim_15
+    # session_lim_15 = db.query(models.Sessions).filter(models.Sessions.title.contains(search)).limit(limit).offset(skip).all()
+    results = db.query(models.Sessions, func.count(models.Votes.session_id).label("likes")).join(
+        models.Votes, models.Votes.session_id == models.Sessions.id, isouter=True).group_by(
+            models.Sessions.id).all()
+    return [{"session": session, "likes": likes} for (session, likes) in results]
 
 
 @router.get("/{id}", response_model=PostCreateOut)
