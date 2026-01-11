@@ -27,17 +27,21 @@ async def get_all_sessions(db : Session = Depends(get_db),
     # session_lim_15 = db.query(models.Sessions).filter(models.Sessions.title.contains(search)).limit(limit).offset(skip).all()
     results = db.query(models.Sessions, func.count(models.Votes.session_id).label("likes")).join(
         models.Votes, models.Votes.session_id == models.Sessions.id, isouter=True).group_by(
-            models.Sessions.id).all()
+            models.Sessions.id).filter(models.Sessions.title.contains(search)).limit(limit).offset(skip).all() 
     return [{"session": session, "likes": likes} for (session, likes) in results]
 
 
-@router.get("/{id}", response_model=PostCreateOut)
+@router.get("/{id}", response_model=SessionListOut)
 async def get_sessions(id: int, db : Session = Depends(get_db),
             user_id : int = Depends(oauth2.get_current_user)):
-    id_session = db.query(models.Sessions).filter(models.Sessions.id ==id).first()
-    if not id_session:
+    #id_session = db.query(models.Sessions).filter(models.Sessions.id ==id).first()
+    result = db.query(models.Sessions, func.count(models.Votes.session_id).label("likes")).join(
+        models.Votes, models.Votes.session_id == models.Sessions.id, isouter=True).group_by(
+            models.Sessions.id).filter(models.Sessions.id ==id).first()
+    if not result:
         raise HTTPException(status_code=404, detail=f"post: {id} does not exist")
-    return id_session
+    session, likes= result
+    return {"session": session, "likes": likes}
 
 
 @router.put("/{id}", response_model=PostCreateOut)

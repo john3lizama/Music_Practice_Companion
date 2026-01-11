@@ -31,3 +31,4 @@ class Votes(Base):
 
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     session_id = Column(Integer, ForeignKey("sessions.id", ondelete="CASCADE"), primary_key=True)
+
