@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+
 """
 https://alembic.sqlalchemy.org/en/latest/api/ddl.html
 documentation for syntax on creating tables
