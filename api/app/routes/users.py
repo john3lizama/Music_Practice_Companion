@@ -9,6 +9,7 @@ from app.database.session import get_db
 
 router = APIRouter(prefix="/users", tags=['Users'])
 
+#create new user
 @router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 async def create_users(user: UserBase, db : Session = Depends(get_db)):
     hashed_password = utils.hash(user.password)
@@ -19,11 +20,13 @@ async def create_users(user: UserBase, db : Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
+#get all existing users
 @router.get("/", response_model= List[UserOut])
 async def get_users(db : Session = Depends(get_db)):
     user_lim_15 = db.query(models.Users).limit(15).all()
     return user_lim_15
 
+#get a specific existing user
 @router.get("/{id}", response_model=UserOut)
 async def create_users(id: int, db : Session = Depends(get_db)):
     user = db.query(models.Users).filter(models.Users.id == id).first()
@@ -32,6 +35,7 @@ async def create_users(id: int, db : Session = Depends(get_db)):
                             detail=f"User with ID: {id} does not exist")
     return user
 
+#Update information from an existing user
 @router.put("/{id}", response_model=UserOut)
 async def create_users(User: UserBase, id: int, db : Session = Depends(get_db)):
     user_query = db.query(models.Users).filter(models.Users.id == id)
@@ -42,6 +46,7 @@ async def create_users(User: UserBase, id: int, db : Session = Depends(get_db)):
     db.commit()
     return user
 
+#Delete an exisiting user
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def create_users(id: int, db : Session = Depends(get_db)):
     user = db.query(models.Users).filter(models.Users.id == id)
