@@ -19,7 +19,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 client = TestClient(app)
 
 #alllows us to have a sessions obj
-@pytest.fixture
+@pytest.fixture(scope='module')
 def session():
     models.Base.metadata.drop_all(bind=engine) #when testing fails, we can
     models.Base.metadata.create_all(bind=engine)#see the current state of our db
@@ -31,7 +31,7 @@ def session():
 
 
 #alllows us to have a client obj
-@pytest.fixture
+@pytest.fixture(scope='module')
 def client(session):
     #run before we run our test
     def override_get_db():
@@ -47,5 +47,13 @@ def client(session):
     #run our code after our test finishes 
     
 
-
-
+#creating a testable user to test other endpoints
+@pytest.fixture
+def test_user(client):
+    user_data = {"email":"dummy@gmail.com", "password" : "password"}
+    res = client.post("/users/", json=user_data)
+    assert res.status_code == 201
+    print(res.json())
+    new_user = res.json()
+    new_user['password'] = user_data['password']
+    return new_user
