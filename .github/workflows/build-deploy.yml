@@ -1,0 +1,21 @@
+name: GitHub Actions Demo
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on: [push]
+jobs:
+  GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pulling git repo
+        uses: actions/checkout@v6
+      - name: Setting up python
+        uses: actions/setup-python@v6
+        with: 
+          python-version: '3.13'
+      - name: upgrade pip
+        run: python -m pip install --upgrade pip
+      - name: install requirements
+        run: pip install -r requirements.txt
+      - name: test with pytest
+        run: |
+          pip install pytest
+          pytest -v -s
