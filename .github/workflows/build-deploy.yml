@@ -2,12 +2,37 @@ name: CI/CD Pipeline with GitHub
 on: [push]
 jobs:
   GitHub-Actions:
+    environment:
+      name: testing
+    env:
+      DATABASE_HOSTNAME: ${{secrets.DATABASE_HOSTNAME}}
+      DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
+      DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+      DATABASE_PORT: ${{secrets.DATABASE_PORT}}
+      DATABASE_NAME: ${{secrets.DATABASE_NAME}}
+      SECRET_KEY: ${{secrets.SECRET_KEY}}
+      ALGORITHM: ${{secrets.ALGORITHM}}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
+
+    services: 
+      postgres:
+        image: postgres
+        env:
+          DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+          DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}_test
+        ports:
+          - 5432:5432
+        options: >-
+            -health-cmd pg_isready
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
     runs-on: ubuntu-latest
     steps:
       - name: Pulling git repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
       - name: Setting up python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with: 
           python-version: '3.13'
       - name: upgrade pip

@@ -27,6 +27,7 @@ fonttools==4.61.1
 greenlet==3.3.0
 h11==0.16.0
 httptools==0.7.1
+httpx>=0.24
 idna==3.11
 joblib==1.5.3
 kiwisolver==1.4.9
