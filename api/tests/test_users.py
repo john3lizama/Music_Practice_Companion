@@ -5,13 +5,11 @@ from app.config import settings
 
 def test_root(client):
     res = client.get("/")
-    print(res.json().get('message'))
     assert res.status_code == 200
 
 def test_create_user(client):
     res = client.post(
         "/users/", json={"email":"example@gmail.com", "password" : "password"})
-    print(res.json())
     new_user = UserOut(**res.json()) #schema test
     assert new_user.email == "example@gmail.com"
     assert res.status_code == 201
@@ -19,7 +17,6 @@ def test_create_user(client):
 def test_user_login(client, test_user):
     res = client.post(
         "/login/", data={"username":test_user['email'], "password" : test_user['password']})
-    print(res.json())
     login_res = Token(**res.json())
     payload = jwt.decode(login_res.token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     id: str = payload.get("user_id")
@@ -37,7 +34,6 @@ def test_user_login(client, test_user):
 def test_invalid_creditials(client, email, password, status_code):
     res = client.post(
         "/login", data={"username":email, "password" : password})
-    print(res.json())
     assert res.status_code == status_code
 
 '''
