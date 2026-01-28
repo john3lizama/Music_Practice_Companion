@@ -33,8 +33,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the Music Practice Companion API!"
-    " Please use the /docs endpoint to explore the API documentation."}
+    return {"message": "TESTING CI/CD PIPELINE"}
 
 app.include_router(sessions.router)
 app.include_router(users.router)
