@@ -79,15 +79,21 @@ jobs:
     environment:
       name: production
     steps:
+      - name: Write SSH key
+        run: |
+          echo "${{ secrets.PROD_SSH_KEY_B64 }}" | base64 -d > key.pem
+          chmod 600 key.pem
       - name: Deploy to EC2 over SSH (pull & restart container)
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USERNAME }}
-          key: ${{ secrets.PROD_SSH_KEY }}
+          key_path: key.pem
           script: |
+            whoami
+            hostname
+            uptime
             set -e
-
             cd /home/ubuntu/Music_Practice_Companion/src
             git fetch --all
             git reset --hard origin/main
