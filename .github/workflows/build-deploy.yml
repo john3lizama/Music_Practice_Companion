@@ -61,8 +61,8 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v6
         with:
-          context: ./
-          file: ./Dockerfile
+          context: ./api
+          file: ./api/Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/backendapi:latest
