@@ -33,7 +33,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "TESTING CI/CD PIPELINE"}
+    return {"message": "TESTING CI/CD PIPELINE, :)"}
 
 app.include_router(sessions.router)
 app.include_router(users.router)
