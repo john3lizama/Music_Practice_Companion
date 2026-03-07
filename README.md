@@ -1,163 +1,71 @@
-music-practice-ai/
-  README.md
-  .gitignore
-  docker/                     # optional later
-  api/
-    requirements.txt
-    .venv/                    # local only (gitignored)
-    app/
-      main.py
-      routes/
-        analyze.py
-        sessions.py
-      services/
-        analysis_service.py
-      core/
-        audio_io.py
-        features.py
-        scoring.py
-        feedback.py
-        plots.py
-      models/                 # pydantic response/request schemas (add soon)
-        schemas.py
-      storage/
-        __init__.py
-      outputs/
-        sessions/             # generated (gitignored)
-  web/                        # add later (React/Vite)
-    (empty for now)
-
-
-
-routes/ = “API endpoints only” (thin layer)
-
-services/ = orchestration (“what happens when analyze runs”)
-
-core/ = pure logic (audio/features/scoring) → easiest to test and reuse
-
-models/ = request/response schemas (keeps API clean)
-
-outputs/ = generated files (never committed)
-
-
-✅ routes/
-
-Only HTTP stuff:
-
-reading params
-
-validating inputs
-
-returning responses
-
-No audio logic here.
-
-✅ services/
-
-Glue code:
-
-create session folder
-
-call core functions in the right order
-
-save JSON/plots
-
-return final result dict
-
-✅ core/
-
-“Pure functions”:
-
-load_audio_any()
-
-compute_pitch_track()
-
-score_pitch()
-
-save_pitch_plot()
-
-No FastAPI imports here.
-
-✅ outputs/
-
-Generated at runtime:
-
-uploads
-
-converted wav
-
-result.json
-
-pitch.png
-
-onsets.png
-
-This should always be gitignored.
-
---------------------------------------------------------------------------------------------------------
-
 # 🎶 AI Music Practice Companion
 
-An **AI-powered music practice assistant** that analyzes **vocal and guitar performances** using audio signal processing and machine learning techniques. The system evaluates **pitch accuracy, timing consistency, and vocal stability**, then generates **actionable feedback** to help musicians practice more effectively.
+> An AI-powered music practice assistant that analyzes vocal and instrumental performances using audio signal processing and machine learning — built backend-first, with a web UI planned.
 
-This project is designed as a **portfolio-ready, end-to-end AI system** and is being built backend-first, with a web UI added later.
+![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
+![FastAPI](https://img.shields.io/badge/FastAPI-framework-009688?logo=fastapi)
+![Status](https://img.shields.io/badge/Status-Work%20In%20Progress-orange)
+![License](https://img.shields.io/badge/License-Educational-lightgrey)
 
 ---
 
-## 🚀 Features (Current)
+## 📌 Overview
 
-* Upload an audio recording (WAV recommended, MP3/M4A supported with ffmpeg)
-* Automatic audio preprocessing (mono, resampling)
-* Pitch tracking (works for **singing and guitar**)
-* Tempo & onset detection (timing analysis)
-* Vocal stability analysis for sustained notes
-* Numeric practice scores:
+The **AI Music Practice Companion** is a portfolio-ready, end-to-end audio analysis system designed to help musicians improve through data-driven feedback. Users upload audio recordings (vocals or guitar), and the system evaluates pitch accuracy, timing consistency, and vocal stability — returning scores, visualizations, and plain-English coaching tips.
 
-  * Pitch Accuracy
-  * Timing Consistency
-  * Vocal Stability
-* Automatically generated visualizations:
+This project is currently a **work in progress**, being developed backend-first with a React web UI planned for a future phase.
 
-  * Pitch-over-time plot
-  * Onset timing plot
-* Session-based results saved to disk
-* Interactive API documentation via Swagger UI
+---
+
+## ✨ Features
+
+- 🎵 Upload audio recordings (WAV recommended; MP3/M4A supported via ffmpeg)
+- 🔄 Automatic audio preprocessing — mono conversion and resampling
+- 🎼 Pitch tracking for both singing and guitar
+- 🥁 Tempo and onset detection for timing analysis
+- 📊 Vocal stability analysis for sustained notes
+- 🔢 Numeric practice scores:
+  - Pitch Accuracy
+  - Timing Consistency
+  - Vocal Stability
+- 📈 Auto-generated visualizations:
+  - Pitch-over-time plot
+  - Onset timing plot
+- 💾 Session-based results saved to disk (reproducible outputs)
+- 📖 Interactive API documentation via Swagger UI
 
 ---
 
 ## 🧠 How It Works
 
-1. User uploads an audio file
-2. Backend processes the audio:
+1. **Upload** — User submits an audio file via the `/api/analyze` endpoint
+2. **Preprocess** — Audio is normalized to mono and resampled for consistency
+3. **Analyze** — Core signal processing extracts pitch, onsets, tempo, and stability metrics
+4. **Score** — Explainable heuristics convert raw features into practice scores
+5. **Feedback** — Scores are translated into plain-English coaching tips
+6. **Save** — All results (JSON + plots) are persisted to a unique session folder
 
-   * Pitch extraction
-   * Onset & tempo detection
-   * Stability analysis
-3. Metrics are scored using explainable heuristics
-4. Feedback is generated in plain English
-5. Results (JSON + plots) are saved per session
-
-Each analysis run creates a reproducible session folder containing all outputs.
+Each analysis run produces a fully reproducible session folder under `api/app/outputs/sessions/<session_id>/`.
 
 ---
 
-## 🛠 Tech Stack
+## 🛠️ Tech Stack
 
 ### Backend
+| Library       | Purpose                          |
+|---------------|----------------------------------|
+| Python 3      | Core language                    |
+| FastAPI       | API framework                    |
+| librosa       | Audio feature extraction         |
+| NumPy / SciPy | Signal processing                |
+| matplotlib    | Visualization                    |
+| ffmpeg        | Audio format conversion          |
+| Pydantic      | Data validation & API schemas    |
 
-* **Python 3**
-* **FastAPI** – API framework
-* **librosa** – audio feature extraction
-* **NumPy / SciPy** – signal processing
-* **matplotlib** – visualization
-* **ffmpeg** – audio format conversion
-* **Pydantic** – data validation
-
-### Frontend (Planned)
-
-* React (Vite)
-* Tailwind CSS
-* shadcn/ui
+### Frontend *(Planned)*
+- React (Vite)
+- Tailwind CSS
+- shadcn/ui
 
 ---
 
@@ -165,156 +73,112 @@ Each analysis run creates a reproducible session folder containing all outputs.
 
 ```
 music-practice-ai/
-  api/
-    app/
-      main.py
-      routes/
-      services/
-      core/
-      models/
-      outputs/
-        sessions/
+├── api/
+│   ├── requirements.txt
+│   └── app/
+│       ├── main.py                  # FastAPI app entry point
+│       ├── routes/
+│       │   ├── analyze.py           # POST /api/analyze endpoint
+│       │   └── sessions.py          # Session retrieval endpoints
+│       ├── services/
+│       │   └── analysis_service.py  # Orchestrates analysis pipeline
+│       ├── core/
+│       │   ├── audio_io.py          # Load, convert, normalize audio
+│       │   ├── features.py          # Pitch, onsets, MFCC extraction
+│       │   ├── scoring.py           # Convert features → practice scores
+│       │   ├── feedback.py          # Convert scores → coaching tips
+│       │   └── plots.py             # Generate visualizations
+│       ├── models/
+│       │   └── schemas.py           # Pydantic request/response DTOs
+│       └── outputs/
+│           └── sessions/            # Generated session outputs (gitignored)
+└── web/                             # Frontend — React/Vite (planned)
 ```
 
-Generated session outputs are stored under:
-
-```
-api/app/outputs/sessions/<session_id>/
-```
+> **Architecture principle:** `routes/` handles HTTP only → `services/` orchestrates logic → `core/` contains pure, testable functions. No FastAPI imports in `core/`.
 
 ---
 
-## ▶️ Running Locally
+## 🚀 Getting Started
 
-### 1. Install system dependency (recommended)
+### Prerequisites
 
-macOS:
+- Python 3.10+
+- [ffmpeg](https://ffmpeg.org/) installed on your system
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/john3lizama/Music_Practice_Companion.git
+cd Music_Practice_Companion/api
+
+# Install ffmpeg (macOS)
 brew install ffmpeg
-```
 
-### 2. Create virtual environment & install dependencies
-
-```bash
-cd api
+# Create and activate virtual environment
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install Python dependencies
 pip install -r requirements.txt
 ```
 
-### 3. Start the API server
+### Running the API
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-### 4. Open API Docs
-
-Navigate to:
-
-```
-http://127.0.0.1:8000/docs
-```
-
-Use the `/api/analyze` endpoint to upload an audio file and view results.
+Then open **http://127.0.0.1:8000/docs** to access the Swagger UI and test the `/api/analyze` endpoint by uploading an audio file.
 
 ---
 
 ## 📊 Example Output
 
-Each session returns:
+Each analysis session returns:
 
-* `result.json` – scores, metadata, and feedback
-* `pitch.png` – pitch-over-time visualization
-* `onsets.png` – timing/onset visualization
+| File           | Description                              |
+|----------------|------------------------------------------|
+| `result.json`  | Scores, metadata, and feedback text      |
+| `pitch.png`    | Pitch-over-time visualization            |
+| `onsets.png`   | Timing and onset visualization           |
 
-Example feedback:
-
-* "Pitch is generally stable but drifts during sustained notes."
-* "Timing inconsistency detected — try practicing with a metronome."
+**Example feedback messages:**
+- *"Pitch is generally stable but drifts during sustained notes."*
+- *"Timing inconsistency detected — try practicing with a metronome."*
 
 ---
 
 ## 🧩 Design Philosophy
 
-* **Explainable AI first** – simple, interpretable metrics
-* **Clean separation of concerns** (API / services / core logic)
-* **Session-based outputs** for reproducibility and debugging
-* **Expandable architecture** for ML models and UI integration
+- **Explainable AI first** — simple, interpretable metrics over black-box models
+- **Clean separation of concerns** — API / services / core logic are fully decoupled
+- **Session-based outputs** — every run is reproducible and independently inspectable
+- **Expandable architecture** — designed to plug in ML models and a web UI later
 
 ---
 
-## 🔮 Planned Improvements
+## 🔮 Roadmap
 
-* Web UI for uploading audio and browsing sessions
-* Real-time recording in browser
-* ML-based scoring models
-* Personalized practice recommendations
-* User accounts & progress tracking
-* Support for reference tracks / backing tracks
+- [ ] Web UI for uploading audio and browsing session history
+- [ ] Real-time recording directly in the browser
+- [ ] ML-based scoring models to replace heuristics
+- [ ] Personalized practice recommendations over time
+- [ ] User accounts and progress tracking
+- [ ] Support for reference tracks and backing tracks
+- [ ] CI/CD pipeline and cloud deployment (AWS EC2)
 
 ---
 
 ## 👤 Author
 
 **John Lizama**
-Computer Science (AI/ML)
-George Mason University
+Computer Science (AI/ML) — George Mason University
+[GitHub](https://github.com/john3lizama)
 
 ---
 
 ## 📄 License
 
-This project is for educational and portfolio purposes.
-
-
-
-
-
-music-practice-ai/
-  README.md
-  .gitignore
-
-  api/
-    requirements.txt
-    app/
-      main.py
-
-      api/                     # FastAPI routes only (thin)
-        routes/
-          analyze.py
-          sessions.py
-
-      domain/                  # business logic (no FastAPI, no filesystem)
-        analysis/
-          service.py           # analyze_take() orchestration
-          scoring.py           # pitch/rhythm scoring
-          feedback.py          # convert scores -> coaching tips
-        sessions/
-          service.py           # start/end session, attach take
-
-      audio/                   # signal processing + utilities
-        io.py                  # load/convert/normalize audio
-        features.py            # pitch/onsets/mfcc extraction
-
-      data/                    # persistence + abstractions
-        storage/
-          audio_store.py       # local now, S3 later
-          paths.py             # session/take paths
-        repositories/
-          session_repo.py      # in-memory now, Postgres later
-
-      models/                  # Pydantic DTOs (API contracts)
-        schemas.py
-
-      common/
-        config.py
-        logging.py
-        errors.py
-
-  runtime/                     # generated (gitignored)
-    sessions/
-    tmp/
-
-  web/                         # later
+This project is intended for educational and portfolio purposes.
