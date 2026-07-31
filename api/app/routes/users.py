@@ -1,95 +1,95 @@
-from fastapi import APIRouter, HTTPException, Depends, Response, status
-from ..main import Session
-from app.models import Users
-from ..schemas.schemas import UserBase, UserOut
-from .. import models, utils
 from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 from app.database.session import get_db
 
+from .. import models, oauth2, utils
+from ..schemas.schemas import UserBase, UserOut
 
-router = APIRouter(prefix="/users", tags=['Users'])
+router = APIRouter(prefix="/users", tags=["Users"])
 
-#create new user
+
+# Registration — the only unauthenticated endpoint here.
 @router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-async def create_users(user: UserBase, db : Session = Depends(get_db)):
+async def create_user(user: UserBase, db: Session = Depends(get_db)):
     hashed_password = utils.hash(user.password)
     user.password = hashed_password
     new_user = models.Users(**user.dict())
     db.add(new_user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        # Generic message: don't confirm which emails are registered.
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Could not create account"
+        )
     db.refresh(new_user)
     return new_user
 
-#get all existing users
-@router.get("/", response_model= List[UserOut])
-async def get_users(db : Session = Depends(get_db)):
-    user_lim_15 = db.query(models.Users).limit(15).all()
-    return user_lim_15
 
-#get a specific existing user
+@router.get("/", response_model=List[UserOut])
+async def get_users(
+    db: Session = Depends(get_db),
+    current_user: models.Users = Depends(oauth2.get_current_user),
+):
+    return db.query(models.Users).limit(15).all()
+
+
 @router.get("/{id}", response_model=UserOut)
-async def create_users(id: int, db : Session = Depends(get_db)):
+async def get_user(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Users = Depends(oauth2.get_current_user),
+):
     user = db.query(models.Users).filter(models.Users.id == id).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                            detail=f"User with ID: {id} does not exist")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
 
-#Update information from an existing user
+
 @router.put("/{id}", response_model=UserOut)
-async def create_users(User: UserBase, id: int, db : Session = Depends(get_db)):
+async def update_user(
+    User: UserBase,
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Users = Depends(oauth2.get_current_user),
+):
+    # Users may only modify their own account.
+    if current_user.id != id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to perform requested action",
+        )
     user_query = db.query(models.Users).filter(models.Users.id == id)
-    user = user_query.first()
-    if not user:
-        raise HTTPException(status_code=403, detail=f"User with ID: {id} does not exist")
-    user_query.update(User.dict(), synchronize_session=False)
-    db.commit()
-    return user
+    if not user_query.first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-#Delete an exisiting user
+    update_data = User.dict()
+    update_data["password"] = utils.hash(update_data["password"])
+    user_query.update(update_data, synchronize_session=False)
+    db.commit()
+    return user_query.first()
+
+
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def create_users(id: int, db : Session = Depends(get_db)):
-    user = db.query(models.Users).filter(models.Users.id == id)
-    if not user.first():
-        raise HTTPException(status_code=404, detail=f"User with ID: {id} does not exist")
-    user.delete(synchronize_session=False)
+async def delete_user(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Users = Depends(oauth2.get_current_user),
+):
+    # Users may only delete their own account.
+    if current_user.id != id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to perform requested action",
+        )
+    user_query = db.query(models.Users).filter(models.Users.id == id)
+    if not user_query.first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user_query.delete(synchronize_session=False)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-
-
-
-
-################################################################################################################
-#endpoints to add later on when code is more alligned with what i really want for the backend
-
-
-"""
-
-router(prefix="/users")
-
-
-@router.get("/{@username}")
-    #get the user's profile, display posts that are public
-    #else display private account
-
-
-@router.put("/me")
-    #options to update the user profile
-    #(bio, pfp, name, etc.)
-
-
-@router.put("/me/privacy")
-    #endpoint to allow the user to change their account
-    #to public/private
-
-
-@router.get("/me")
-    #only allow if user_id == get_current_user()
-    #full private view, getting the user_id and displaying
-
-
-    
-
-"""
