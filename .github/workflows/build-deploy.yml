@@ -1,10 +1,11 @@
 name: CI/CD Pipeline with GitHub
 
-# Tests run on every push and PR; deploy runs ONLY on pushes to main
-# (previously any branch push deployed to prod).
+# TEMP: push trigger disabled — no deploy target exists right now (EC2/images
+# torn down), so there's no point running Build/BuildWeb on every push to
+# main. PRs still run the full suite. Re-add the push trigger once Deploy is
+# re-enabled, or use workflow_dispatch below to run manually in the meantime.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
   pull_request:
 
 jobs:
