@@ -1,19 +1,17 @@
+# Local-only: builds and runs a production-like image (no --reload, no
+# source mount). Actual prod deploy is systemd + Caddy (see deploy/), not
+# this image — the old johnlizama/backendapi Docker Hub image is retired.
 services:
   api:
-    image: johnlizama/backendapi
+    build: .
     depends_on:
       - postgres
     ports:
-      - 80:8000
+      - 8000:8000
+    env_file:
+      - ./.env
     environment:
-      - DATABASE_HOSTNAME=${DATABASE_HOSTNAME}
-      - DATABASE_PORT=${DATABASE_PORT}
-      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - DATABASE_NAME=${DATABASE_NAME}
-      - DATABASE_USERNAME=${DATABASE_USERNAME}
-      - SECRET_KEY=${SECRET_KEY}
-      - ALGORITHM=${ALGORITHM}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - DATABASE_HOSTNAME=postgres
 
   postgres:
     image: postgres
