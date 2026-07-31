@@ -42,15 +42,23 @@ Every screen in the app, captured from a production web build against a seeded d
 
 ### Marketing / auth
 
-| Landing page | Sign in | Create account | Forgot password |
-|---|---|---|---|
-| ![Landing page](docs/screenshots/01-index.png) | ![Sign in](docs/screenshots/02-login.png) | ![Create account](docs/screenshots/03-register.png) | ![Forgot password](docs/screenshots/04-forgot-password.png) |
+| Landing page | Sign in |
+|---|---|
+| ![Landing page](docs/screenshots/01-index.png) | ![Sign in](docs/screenshots/02-login.png) |
+
+| Create account | Forgot password |
+|---|---|
+| ![Create account](docs/screenshots/03-register.png) | ![Forgot password](docs/screenshots/04-forgot-password.png) |
 
 ### Core app
 
-| Discover | Analyze | Feed | Profile |
-|---|---|---|---|
-| ![Discover](docs/screenshots/05-home.png) | ![Analyze](docs/screenshots/06-analyze.png) | ![Feed](docs/screenshots/07-feed.png) | ![Profile](docs/screenshots/08-profile.png) |
+| Discover | Analyze |
+|---|---|
+| ![Discover](docs/screenshots/05-home.png) | ![Analyze](docs/screenshots/06-analyze.png) |
+
+| Feed | Profile |
+|---|---|
+| ![Feed](docs/screenshots/07-feed.png) | ![Profile](docs/screenshots/08-profile.png) |
 
 ### Song + practice flow
 
