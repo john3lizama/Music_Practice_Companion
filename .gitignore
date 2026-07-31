@@ -2,10 +2,18 @@
 __pycache__/
 *.pyc
 .venv/
+venv/
 .env
+.pytest_cache/
+
+# Databases
+*.db
+*.sqlite3
 
 # Outputs / generated
 api/app/outputs/
+api/uploads/
+api/app/core/temp_folder/
 *.wav
 *.mp3
 *.m4a
@@ -13,6 +21,14 @@ api/app/outputs/
 # OS
 .DS_Store
 
-# Node (later)
+# Markdown docs (keep README tracked)
+*.md
+!README.md
+
+# Node
+node_modules/
 web/node_modules/
 web/dist/
+frontend/.expo/
+frontend/dist/
+frontend/screenshots/

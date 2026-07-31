@@ -1,6 +1,6 @@
-# 🎶 AI Music Practice Companion
+# 🎶 MusicVJN
 
-> An AI-powered music practice assistant that analyzes vocal and instrumental performances using audio signal processing and machine learning — built backend-first, with a web UI planned.
+> **Music, with vision.** An AI-powered music practice assistant that analyzes vocal and instrumental performances using audio signal processing and machine learning. (Formerly "AI Music Practice Companion" — VJN is short for *vision*.)
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-framework-009688?logo=fastapi)
@@ -11,9 +11,9 @@
 
 ## 📌 Overview
 
-The **AI Music Practice Companion** is a portfolio-ready, end-to-end audio analysis system designed to help musicians improve through data-driven feedback. Users upload audio recordings (vocals or guitar), and the system evaluates pitch accuracy, timing consistency, and vocal stability — returning scores, visualizations, and plain-English coaching tips.
+**MusicVJN** is a portfolio-ready, end-to-end audio analysis system designed to help musicians improve through data-driven feedback. Users upload audio recordings (vocals or guitar), and the system evaluates pitch accuracy, timing consistency, and vocal stability — returning scores, visualizations, and plain-English coaching tips.
 
-This project is currently a **work in progress**, being developed backend-first with a React web UI planned for a future phase.
+This project is currently a **work in progress**. The API is backend-first and battle-tested; the frontend (Expo/React Native, runs on web + mobile) is under active development — see [Screenshots](#-screenshots) below for the current state of every screen.
 
 ---
 
@@ -33,6 +33,36 @@ This project is currently a **work in progress**, being developed backend-first 
   - Onset timing plot
 - 💾 Session-based results saved to disk (reproducible outputs)
 - 📖 Interactive API documentation via Swagger UI
+
+---
+
+## 📸 Screenshots
+
+Every screen in the app, captured from a production web build against a seeded demo account.
+
+### Marketing / auth
+
+| Landing page | Sign in | Create account | Forgot password |
+|---|---|---|---|
+| ![Landing page](docs/screenshots/01-index.png) | ![Sign in](docs/screenshots/02-login.png) | ![Create account](docs/screenshots/03-register.png) | ![Forgot password](docs/screenshots/04-forgot-password.png) |
+
+### Core app
+
+| Discover | Analyze | Feed | Profile |
+|---|---|---|---|
+| ![Discover](docs/screenshots/05-home.png) | ![Analyze](docs/screenshots/06-analyze.png) | ![Feed](docs/screenshots/07-feed.png) | ![Profile](docs/screenshots/08-profile.png) |
+
+### Song + practice flow
+
+| Song detail | Practice player |
+|---|---|
+| ![Song detail](docs/screenshots/09-song-detail.png) | ![Practice player](docs/screenshots/10-practice-player.png) |
+
+### Legal
+
+| Privacy policy | Terms of service |
+|---|---|
+| ![Privacy policy](docs/screenshots/11-legal-privacy.png) | ![Terms of service](docs/screenshots/12-legal-terms.png) |
 
 ---
 
@@ -62,10 +92,13 @@ Each analysis run produces a fully reproducible session folder under `api/app/ou
 | ffmpeg        | Audio format conversion          |
 | Pydantic      | Data validation & API schemas    |
 
-### Frontend *(Planned)*
-- React (Vite)
-- Tailwind CSS
-- shadcn/ui
+### Frontend
+| Library         | Purpose                          |
+|-----------------|-----------------------------------|
+| Expo / React Native | Cross-platform app (web + iOS/Android) |
+| expo-router     | File-based navigation             |
+| TypeScript      | Type-safe components + API client |
+| Playwright      | End-to-end tests for the web build |
 
 ---
 

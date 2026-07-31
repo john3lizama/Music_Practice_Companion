@@ -1,0 +1,20 @@
+# systemd unit for the MusicVJN API.
+# Install: sudo cp deploy/api.service /etc/systemd/system/api.service
+#          sudo systemctl daemon-reload && sudo systemctl enable --now api
+[Unit]
+Description=MusicVJN FastAPI service
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Music_Practice_Companion/api
+# Secrets come from the environment, not a committed file. In production,
+# prefer an EnvironmentFile pulled from AWS SSM at boot over a static .env.
+EnvironmentFile=/home/ubuntu/Music_Practice_Companion/api/.env
+ExecStart=/home/ubuntu/Music_Practice_Companion/api/.venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 --port 8000 --workers 2
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
