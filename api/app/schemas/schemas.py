@@ -1,17 +1,16 @@
-from pydantic import BaseModel, EmailStr, ConfigDict, conint
-from fastapi_users import schemas
-from uuid import UUID
-from typing import Optional, Literal
 from datetime import datetime
-#basemodel == schemas
+from typing import Literal, Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr
+
                                 # USER SCHEMAS
 ############################################################################################################
 
+
 class UserBase(BaseModel):
-    #id:
     email: EmailStr
     password: str
-    #created_at:
+
 
 class UserOut(BaseModel):
     id: int
@@ -19,37 +18,26 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserUpdate(schemas.BaseUserUpdate):
-    pass
-
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
 
-                                # CRUD SCHEMAS
+                                # SOCIAL SESSION (POST) SCHEMAS
 ############################################################################################################
 
-class PostBase(BaseModel):
-    id: UUID
-    user_id: Optional[UUID] = None
-    title: str
-    notes: Optional[str] = None
-    file_type: str
-    content: str
-    created_at: datetime
-
-class Post(PostBase):
-    pass #inherits all field from base
 
 class PostCreate(BaseModel):
     title: str
     content: str
 
+
 class PostOut(BaseModel):
     title: str
     content: str
     owner_id: int
+    model_config = ConfigDict(from_attributes=True)
+
 
 class PostCreateOut(BaseModel):
     title: str
@@ -58,16 +46,7 @@ class PostCreateOut(BaseModel):
     id: int
     owner_id: int
     owner: UserOut
-    #tells pydantic to ignore its not dict, and to convert it
     model_config = ConfigDict(from_attributes=True)
-
-class SessionCreate(BaseModel):
-    user_id: int
-    token: str
-
-class SessionUpdate(BaseModel):
-    status: str
-    progress: float
 
 
 class SessionListOut(BaseModel):
@@ -78,9 +57,11 @@ class SessionListOut(BaseModel):
                                 # TOKEN SCHEMAS
 ############################################################################################################
 
+
 class Token(BaseModel):
     token: str
     token_type: str
+
 
 class TokenData(BaseModel):
     id: Optional[int] = None
@@ -88,6 +69,7 @@ class TokenData(BaseModel):
 
                                 # VOTES/LIKES SCHEMA
 ############################################################################################################
+
 
 class Vote(BaseModel):
     session_id: int
