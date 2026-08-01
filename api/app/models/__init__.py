@@ -1,9 +1,9 @@
-from app.database.session import Base
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
-from sqlalchemy.sql.expression import text
-from datetime import datetime
-from sqlalchemy.sql.sqltypes import TIMESTAMP
+from sqlalchemy import Column, ForeignKey, Integer, String, func
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.sqltypes import TIMESTAMP
+
+from app.database.session import Base
+
 
 class Sessions(Base):
     __tablename__ = "sessions"
@@ -11,10 +11,11 @@ class Sessions(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     title = Column(String, nullable=False)
     content = Column(String, nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    # func.now() renders as now() on Postgres and CURRENT_TIMESTAMP on SQLite,
+    # so the same models work in prod and in the test suite.
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    owner = relationship("Users") #reference the class
-
+    owner = relationship("Users")
 
 
 class Users(Base):
@@ -23,7 +24,7 @@ class Users(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     email = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
 
 
 class Votes(Base):
