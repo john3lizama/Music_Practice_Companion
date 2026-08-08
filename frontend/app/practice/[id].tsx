@@ -5,11 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
 import { Background } from '../../src/components/Background';
-import { GlassCard, H2, Muted, SectionLabel, Seekbar } from '../../src/components/ui';
+import { BrandMark, GlassCard, H2, Muted, SectionLabel, Seekbar } from '../../src/components/ui';
 import { colors, gradients, spacing, fontSize, fontWeight, radius } from '../../src/theme';
 import { getSong } from '../../src/api';
 import type { Song } from '../../src/mockData';
-import { PAD_ASSETS, PAD_LOOP_DURATION_SEC } from '../../src/audio';
+import { SONG_AUDIO, PAD_LOOP_DURATION_SEC } from '../../src/audio';
 import { getLyrics, type LyricLine } from '../../src/lyrics';
 
 const LYRICS_PANEL_HEIGHT = 240;
@@ -42,8 +42,13 @@ export default function PracticePlayer() {
   const [tempo, setTempo] = useState(100); // percent
   const [loop, setLoop] = useState(false);
   const [transpose, setTranspose] = useState(0); // semitones
+  const [volume, setVolume] = useState(0.85); // 0-1
+  const [muted, setMuted] = useState(false);
+  const [volumeHover, setVolumeHover] = useState(false);
+  const [draggingVolume, setDraggingVolume] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const seekToken = useRef(0);
 
   useEffect(() => {
     if (!id) return;
@@ -65,9 +70,9 @@ export default function PracticePlayer() {
 
     (async () => {
       try {
-        const { sound } = await Audio.Sound.createAsync(PAD_ASSETS[song.pad], {
+        const { sound } = await Audio.Sound.createAsync(SONG_AUDIO[song.id], {
           isLooping: true,
-          volume: 0.85,
+          volume: muted ? 0 : volume,
         });
         if (cancelled) {
           sound.unloadAsync().catch(() => {});
@@ -88,11 +93,18 @@ export default function PracticePlayer() {
       soundRef.current?.unloadAsync().catch(() => {});
       soundRef.current = null;
     };
+    // volume/muted are only used as this Sound's *initial* value — the
+    // effect below keeps them in sync after that without reloading the file.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [song]);
 
   useEffect(() => {
     soundRef.current?.setRateAsync(tempo / 100, true).catch(() => {});
   }, [tempo]);
+
+  useEffect(() => {
+    soundRef.current?.setVolumeAsync(muted ? 0 : volume).catch(() => {});
+  }, [volume, muted]);
 
   useEffect(() => {
     if (playing && song) {
@@ -120,6 +132,12 @@ export default function PracticePlayer() {
   const togglePlay = async () => {
     const sound = soundRef.current;
     const next = !playing;
+    // A track that's finished should restart from the top on play, same as
+    // any real player — otherwise `pos` is already >= duration and the very
+    // next tick above immediately flips `playing` back off again.
+    if (next && song && pos >= song.durationSec - 0.05) {
+      seekTo(0);
+    }
     setPlaying(next);
     if (!sound) return;
     try {
@@ -135,7 +153,30 @@ export default function PracticePlayer() {
     if (!song) return;
     const clamped = Math.max(0, Math.min(song.durationSec, sec));
     setPos(clamped);
-    soundRef.current?.setPositionAsync((clamped % PAD_LOOP_DURATION_SEC) * 1000).catch(() => {});
+    const sound = soundRef.current;
+    if (!sound) return;
+
+    // Jumping straight to a new point in a continuous sine pad lands
+    // mid-waveform (a pop) and, on the compressed AAC file, the decoder
+    // needs a beat to resync after an arbitrary seek (a burst of static if
+    // it's audible while unstable). Duck the volume down, seek, give the
+    // decoder a moment to settle, then bring it back up — and if another
+    // seek starts before that finishes (e.g. dragging), only the latest one
+    // is allowed to restore the volume, so overlapping seeks don't fight
+    // each other and produce exactly the stutter/static this guards against.
+    const token = ++seekToken.current;
+    (async () => {
+      try {
+        await sound.setVolumeAsync(0);
+        await sound.setPositionAsync((clamped % PAD_LOOP_DURATION_SEC) * 1000);
+        await new Promise((r) => setTimeout(r, 90));
+        if (seekToken.current === token) {
+          await sound.setVolumeAsync(muted ? 0 : volume);
+        }
+      } catch {
+        // best-effort — position/lyrics already updated above regardless.
+      }
+    })();
   };
 
   const lyrics = useMemo(() => (song ? getLyrics(song.id, song.durationSec) : []), [song]);
@@ -159,14 +200,23 @@ export default function PracticePlayer() {
   }
 
   const progress = (pos / song.durationSec) * 100;
-  const activeBeat = Math.floor((pos / song.durationSec) * song.progression.length) % song.progression.length;
+  // The audio pad cycles through the progression once per 16s loop (see
+  // src/audio.ts) — sync the highlighted chord to that same cycle so what's
+  // shown always matches what's audible, instead of once per whole song.
+  const segDur = PAD_LOOP_DURATION_SEC / song.progression.length;
+  const activeBeat = Math.floor((pos % PAD_LOOP_DURATION_SEC) / segDur) % song.progression.length;
 
   return (
     <Background testID="practice-screen">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.xl, paddingTop: 56, paddingBottom: 80, maxWidth: 760, width: '100%', alignSelf: 'center' }}>
-        <Pressable testID="practice-back" onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </Pressable>
+        <View style={styles.headerRow}>
+          <Pressable testID="practice-back" onPress={() => router.back()} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </Pressable>
+          <Pressable testID="practice-logo-home" onPress={() => router.push('/home')} hitSlop={8}>
+            <BrandMark size="sm" testID="practice-logo" />
+          </Pressable>
+        </View>
 
         <SectionLabel style={{ marginTop: spacing.lg }}>Practice player</SectionLabel>
         <H2 testID="practice-song-title" style={{ marginTop: spacing.xs }}>{song.title}</H2>
@@ -222,6 +272,47 @@ export default function PracticePlayer() {
             </Pressable>
           </View>
           <Text style={styles.loopState} testID="practice-loop-state">{loop ? 'Loop on' : 'Loop off'}</Text>
+
+          <Pressable
+            testID="volume-hover-zone"
+            style={styles.volumeRow}
+            onHoverIn={() => setVolumeHover(true)}
+            onHoverOut={() => setVolumeHover(false)}
+            // RNW's onHoverIn/onHoverOut don't reliably fire in every
+            // environment — the raw DOM mouseenter/mouseleave pass straight
+            // through and do, so wire both for a web hover that actually works.
+            {...({
+              onMouseEnter: () => setVolumeHover(true),
+              onMouseLeave: () => setVolumeHover(false),
+            } as any)}
+          >
+            <Pressable testID="volume-mute-toggle" onPress={() => setMuted((m) => !m)} hitSlop={8}>
+              <Ionicons
+                name={muted || volume === 0 ? 'volume-mute' : volume < 0.5 ? 'volume-low' : 'volume-high'}
+                size={20}
+                color={colors.textMuted}
+              />
+            </Pressable>
+            {(volumeHover || draggingVolume) && (
+              <View style={styles.volumeSliderWrap} testID="volume-slider-wrap">
+                <Seekbar
+                  value={muted ? 0 : volume * 100}
+                  testID="volume-control"
+                  height={6}
+                  onSeek={(percent) => {
+                    setDraggingVolume(true);
+                    setVolume(percent / 100);
+                    if (muted) setMuted(false);
+                  }}
+                  onSeekEnd={(percent) => {
+                    setDraggingVolume(false);
+                    setVolume(percent / 100);
+                    if (muted) setMuted(false);
+                  }}
+                />
+              </View>
+            )}
+          </Pressable>
         </GlassCard>
 
         {/* Lyrics */}
@@ -342,6 +433,7 @@ function LyricsPanel({
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.surfaceStrong, alignItems: 'center', justifyContent: 'center' },
 
   beatRow: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'space-between' },
@@ -358,6 +450,8 @@ const styles = StyleSheet.create({
   transportActive: { borderColor: colors.borderStrong, backgroundColor: colors.primarySoft },
   playBig: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   loopState: { color: colors.textFaint, fontSize: fontSize.xs, textAlign: 'center', marginTop: spacing.md },
+  volumeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.lg, alignSelf: 'center' },
+  volumeSliderWrap: { width: 96 },
 
   lyricLineRow: { paddingVertical: 10 },
   lyricLine: { color: colors.textFaint, fontSize: fontSize.md, lineHeight: 24, fontWeight: fontWeight.medium },
