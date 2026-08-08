@@ -196,6 +196,74 @@ export function ProgressBar({
   );
 }
 
+/* ---------------------------------------------------------------- Seekbar */
+
+/**
+ * A draggable/clickable version of ProgressBar for scrubbing playback.
+ * Uses React Native's core responder system (works on web via
+ * react-native-web) rather than a platform-specific input, so the same
+ * component drags on native and web alike.
+ */
+export function Seekbar({
+  value,
+  onSeek,
+  onSeekEnd,
+  height = 8,
+  testID,
+}: {
+  value: number; // 0-100
+  onSeek?: (percent: number) => void;
+  onSeekEnd?: (percent: number) => void;
+  height?: number;
+  testID?: string;
+}) {
+  const widthRef = useRef(0);
+  const clamped = Math.max(0, Math.min(100, value));
+
+  const percentFromLocationX = (x: number) => {
+    if (!widthRef.current) return null;
+    return Math.max(0, Math.min(100, (x / widthRef.current) * 100));
+  };
+
+  const handleTouch = (e: any, end: boolean) => {
+    const x = e.nativeEvent.locationX ?? e.nativeEvent.offsetX;
+    const percent = percentFromLocationX(x);
+    if (percent == null) return;
+    (end ? onSeekEnd : onSeek)?.(percent);
+  };
+
+  // react-native-web passes plain DOM events like onClick through, but the
+  // RN View type doesn't declare it — cast the extra web-only handler in via `any`.
+  const webFallback: any = { onClick: (e: any) => handleTouch(e, true) };
+
+  return (
+    <View
+      testID={testID}
+      onLayout={(e) => {
+        widthRef.current = e.nativeEvent.layout.width;
+      }}
+      onStartShouldSetResponder={() => true}
+      onMoveShouldSetResponder={() => true}
+      onResponderGrant={(e) => handleTouch(e, false)}
+      onResponderMove={(e) => handleTouch(e, false)}
+      onResponderRelease={(e) => handleTouch(e, true)}
+      {...webFallback}
+      hitSlop={{ top: 14, bottom: 14 }}
+      style={{ width: '100%', height: Math.max(height, 14), justifyContent: 'center' }}
+    >
+      <View style={[styles.progressTrack, { height, borderRadius: height }]}>
+        <LinearGradient
+          colors={gradients.accent as unknown as string[]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{ width: `${clamped}%`, height: '100%', borderRadius: height }}
+        />
+      </View>
+      <View style={[styles.seekThumb, { left: `${clamped}%`, marginLeft: -7 }]} pointerEvents="none" />
+    </View>
+  );
+}
+
 /* ----------------------------------------------------------- SectionLabel */
 
 export function SectionLabel({ children, style }: { children: React.ReactNode; style?: StyleProp<TextStyle> }) {
@@ -507,6 +575,15 @@ const styles = StyleSheet.create({
   pillTextActive: { color: colors.primaryBright, fontWeight: fontWeight.semibold },
 
   progressTrack: { width: '100%', backgroundColor: colors.surfaceStrong, overflow: 'hidden' },
+  seekThumb: {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.white,
+    borderWidth: 2,
+    borderColor: colors.primaryBright,
+  },
 
   sectionLabel: {
     color: colors.primaryBright,
