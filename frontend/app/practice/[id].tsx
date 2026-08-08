@@ -67,16 +67,19 @@ export default function PracticePlayer() {
       try {
         const { sound } = await Audio.Sound.createAsync(PAD_ASSETS[song.pad], {
           isLooping: true,
-          volume: 0.5,
+          volume: 0.85,
         });
         if (cancelled) {
           sound.unloadAsync().catch(() => {});
           return;
         }
         soundRef.current = sound;
-      } catch {
+      } catch (e) {
         // Audio unavailable in this environment (e.g. some test runners) —
         // the visual player, seeking, and lyrics still work without sound.
+        // Logged (not swallowed) so a real playback failure is visible in
+        // the console instead of just "no sound, no explanation".
+        console.warn('[practice] could not load placeholder audio:', e);
       }
     })();
 
@@ -122,8 +125,9 @@ export default function PracticePlayer() {
     try {
       if (next) await sound.playAsync();
       else await sound.pauseAsync();
-    } catch {
-      // ignore — position/lyrics keep working without sound.
+    } catch (e) {
+      // position/lyrics keep working without sound — but log why playback failed.
+      console.warn('[practice] playAsync/pauseAsync failed:', e);
     }
   };
 
