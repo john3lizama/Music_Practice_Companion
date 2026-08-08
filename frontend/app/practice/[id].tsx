@@ -270,49 +270,52 @@ export default function PracticePlayer() {
             <Pressable testID="practice-loop-toggle" onPress={() => setLoop((l) => !l)} style={[styles.transportBtn, loop && styles.transportActive]}>
               <Ionicons name="repeat" size={22} color={loop ? colors.primaryBright : colors.text} />
             </Pressable>
+
+            {/* Volume sits to the side of the transport row, at the same
+                height, instead of on its own line — the slider only widens
+                this row (still one line) when hovered, never adds height. */}
+            <Pressable
+              testID="volume-hover-zone"
+              style={styles.volumeRow}
+              onHoverIn={() => setVolumeHover(true)}
+              onHoverOut={() => setVolumeHover(false)}
+              // RNW's onHoverIn/onHoverOut don't reliably fire in every
+              // environment — the raw DOM mouseenter/mouseleave pass straight
+              // through and do, so wire both for a web hover that actually works.
+              {...({
+                onMouseEnter: () => setVolumeHover(true),
+                onMouseLeave: () => setVolumeHover(false),
+              } as any)}
+            >
+              <Pressable testID="volume-mute-toggle" onPress={() => setMuted((m) => !m)} hitSlop={8}>
+                <Ionicons
+                  name={muted || volume === 0 ? 'volume-mute' : volume < 0.5 ? 'volume-low' : 'volume-high'}
+                  size={20}
+                  color={colors.textMuted}
+                />
+              </Pressable>
+              {(volumeHover || draggingVolume) && (
+                <View style={styles.volumeSliderWrap} testID="volume-slider-wrap">
+                  <Seekbar
+                    value={muted ? 0 : volume * 100}
+                    testID="volume-control"
+                    height={6}
+                    onSeek={(percent) => {
+                      setDraggingVolume(true);
+                      setVolume(percent / 100);
+                      if (muted) setMuted(false);
+                    }}
+                    onSeekEnd={(percent) => {
+                      setDraggingVolume(false);
+                      setVolume(percent / 100);
+                      if (muted) setMuted(false);
+                    }}
+                  />
+                </View>
+              )}
+            </Pressable>
           </View>
           <Text style={styles.loopState} testID="practice-loop-state">{loop ? 'Loop on' : 'Loop off'}</Text>
-
-          <Pressable
-            testID="volume-hover-zone"
-            style={styles.volumeRow}
-            onHoverIn={() => setVolumeHover(true)}
-            onHoverOut={() => setVolumeHover(false)}
-            // RNW's onHoverIn/onHoverOut don't reliably fire in every
-            // environment — the raw DOM mouseenter/mouseleave pass straight
-            // through and do, so wire both for a web hover that actually works.
-            {...({
-              onMouseEnter: () => setVolumeHover(true),
-              onMouseLeave: () => setVolumeHover(false),
-            } as any)}
-          >
-            <Pressable testID="volume-mute-toggle" onPress={() => setMuted((m) => !m)} hitSlop={8}>
-              <Ionicons
-                name={muted || volume === 0 ? 'volume-mute' : volume < 0.5 ? 'volume-low' : 'volume-high'}
-                size={20}
-                color={colors.textMuted}
-              />
-            </Pressable>
-            {(volumeHover || draggingVolume) && (
-              <View style={styles.volumeSliderWrap} testID="volume-slider-wrap">
-                <Seekbar
-                  value={muted ? 0 : volume * 100}
-                  testID="volume-control"
-                  height={6}
-                  onSeek={(percent) => {
-                    setDraggingVolume(true);
-                    setVolume(percent / 100);
-                    if (muted) setMuted(false);
-                  }}
-                  onSeekEnd={(percent) => {
-                    setDraggingVolume(false);
-                    setVolume(percent / 100);
-                    if (muted) setMuted(false);
-                  }}
-                />
-              </View>
-            )}
-          </Pressable>
         </GlassCard>
 
         {/* Lyrics */}
@@ -450,8 +453,8 @@ const styles = StyleSheet.create({
   transportActive: { borderColor: colors.borderStrong, backgroundColor: colors.primarySoft },
   playBig: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   loopState: { color: colors.textFaint, fontSize: fontSize.xs, textAlign: 'center', marginTop: spacing.md },
-  volumeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.lg, alignSelf: 'center' },
-  volumeSliderWrap: { width: 96 },
+  volumeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  volumeSliderWrap: { width: 72 },
 
   lyricLineRow: { paddingVertical: 10 },
   lyricLine: { color: colors.textFaint, fontSize: fontSize.md, lineHeight: 24, fontWeight: fontWeight.medium },
