@@ -39,7 +39,7 @@ export default function Forgot() {
   return (
     <Background testID="forgot-screen">
       <ScrollView contentContainerStyle={styles.wrap}>
-        <Pressable testID="forgot-home" onPress={() => router.push('/')} style={styles.brand}>
+        <Pressable testID="forgot-home" onPress={() => router.replace('/')} style={styles.brand}>
           <BrandMark />
         </Pressable>
 
@@ -56,7 +56,7 @@ export default function Forgot() {
                 label="Back to sign in"
                 size="lg"
                 testID="forgot-to-login"
-                onPress={() => router.push('/(auth)/login')}
+                onPress={() => router.replace('/(auth)/login')}
                 style={{ marginTop: spacing.xl }}
               />
             </View>
@@ -104,7 +104,7 @@ export default function Forgot() {
                 style={{ marginTop: spacing.lg }}
               />
 
-              <Pressable testID="forgot-back" onPress={() => router.push('/(auth)/login')} style={{ marginTop: spacing.lg, alignSelf: 'center' }}>
+              <Pressable testID="forgot-back" onPress={() => router.replace('/(auth)/login')} style={{ marginTop: spacing.lg, alignSelf: 'center' }}>
                 <Text style={styles.link}>Back to sign in</Text>
               </Pressable>
             </>

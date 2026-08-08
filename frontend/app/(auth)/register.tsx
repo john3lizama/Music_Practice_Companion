@@ -31,7 +31,7 @@ export default function Register() {
   return (
     <Background testID="register-screen">
       <ScrollView contentContainerStyle={styles.wrap}>
-        <Pressable testID="register-home" onPress={() => router.push('/')} style={styles.brand}>
+        <Pressable testID="register-home" onPress={() => router.replace('/')} style={styles.brand}>
           <BrandMark />
         </Pressable>
 
@@ -48,7 +48,7 @@ export default function Register() {
 
           <View style={styles.switchRow}>
             <Muted>Already have an account?</Muted>
-            <Pressable testID="go-login" onPress={() => router.push('/(auth)/login')}>
+            <Pressable testID="go-login" onPress={() => router.replace('/(auth)/login')}>
               <Text style={styles.link}>Sign in</Text>
             </Pressable>
           </View>

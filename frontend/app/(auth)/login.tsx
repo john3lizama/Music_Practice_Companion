@@ -31,7 +31,7 @@ export default function Login() {
   return (
     <Background testID="login-screen">
       <ScrollView contentContainerStyle={styles.wrap}>
-        <Pressable testID="login-home" onPress={() => router.push('/')} style={styles.brand}>
+        <Pressable testID="login-home" onPress={() => router.replace('/')} style={styles.brand}>
           <BrandMark />
         </Pressable>
 
@@ -44,7 +44,7 @@ export default function Login() {
 
           {error ? <Text style={styles.error} testID="login-error">{error}</Text> : null}
 
-          <Pressable testID="go-forgot" onPress={() => router.push('/(auth)/forgot')} style={{ alignSelf: 'flex-end', marginTop: spacing.sm }}>
+          <Pressable testID="go-forgot" onPress={() => router.replace('/(auth)/forgot')} style={{ alignSelf: 'flex-end', marginTop: spacing.sm }}>
             <Text style={styles.link}>Forgot password?</Text>
           </Pressable>
 
@@ -52,7 +52,7 @@ export default function Login() {
 
           <View style={styles.switchRow}>
             <Muted>New here?</Muted>
-            <Pressable testID="go-register" onPress={() => router.push('/(auth)/register')}>
+            <Pressable testID="go-register" onPress={() => router.replace('/(auth)/register')}>
               <Text style={styles.link}>Create an account</Text>
             </Pressable>
           </View>
