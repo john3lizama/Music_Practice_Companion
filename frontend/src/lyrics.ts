@@ -1,36 +1,33 @@
 /**
- * Placeholder lyrics for the practice player's click-to-seek lyrics panel.
+ * Placeholder lyrics for the practice player's Spotify-style lyrics panel.
  *
  * There's no licensed lyrics API wired up, so these are original filler
- * lines (not the real song's lyrics) — just enough text, timed out across
- * the song's duration, to demo word-level tap-to-seek.
+ * lines (not the real song's lyrics), timed out line-by-line across the
+ * song's duration so the panel can highlight/auto-scroll to the current
+ * line and seek on tap — same interaction model as Spotify's lyrics view.
  */
-export interface LyricWord {
-  time: number; // seconds into the song
+export interface LyricLine {
+  time: number; // seconds into the song this line starts
   text: string;
-  line: number;
 }
 
-function buildLyrics(lines: string[], durationSec: number): LyricWord[] {
+function buildLyricLines(lines: string[], durationSec: number): LyricLine[] {
   const startOffset = Math.min(6, durationSec * 0.08);
   const endPad = Math.min(6, durationSec * 0.08);
   const usable = Math.max(1, durationSec - startOffset - endPad);
-  const linePause = 0.6; // in "word slots"
+  const linePause = 0.6; // in "word slots", the gap held between lines
 
   const wordCounts = lines.map((l) => l.split(' ').length);
   const totalWords = wordCounts.reduce((a, b) => a + b, 0);
   const perWord = usable / (totalWords + (lines.length - 1) * linePause);
 
-  const words: LyricWord[] = [];
+  const out: LyricLine[] = [];
   let t = startOffset;
   lines.forEach((line, li) => {
-    line.split(' ').forEach((w) => {
-      words.push({ time: +t.toFixed(2), text: w, line: li });
-      t += perWord;
-    });
-    t += perWord * linePause;
+    out.push({ time: +t.toFixed(2), text: line });
+    t += wordCounts[li] * perWord + perWord * linePause;
   });
-  return words;
+  return out;
 }
 
 const LYRIC_LINES: Record<string, string[]> = {
@@ -96,15 +93,15 @@ const LYRIC_LINES: Record<string, string[]> = {
   ],
 };
 
-const LYRICS_CACHE = new Map<string, LyricWord[]>();
+const LYRICS_CACHE = new Map<string, LyricLine[]>();
 
-export function getLyrics(songId: string, durationSec: number): LyricWord[] {
+export function getLyrics(songId: string, durationSec: number): LyricLine[] {
   const cacheKey = `${songId}:${durationSec}`;
   const cached = LYRICS_CACHE.get(cacheKey);
   if (cached) return cached;
 
   const lines = LYRIC_LINES[songId] ?? LYRIC_LINES['song-wonderwall'];
-  const words = buildLyrics(lines, durationSec);
-  LYRICS_CACHE.set(cacheKey, words);
-  return words;
+  const built = buildLyricLines(lines, durationSec);
+  LYRICS_CACHE.set(cacheKey, built);
+  return built;
 }

@@ -10,7 +10,9 @@ import { colors, gradients, spacing, fontSize, fontWeight, radius } from '../../
 import { getSong } from '../../src/api';
 import type { Song } from '../../src/mockData';
 import { PAD_ASSETS, PAD_LOOP_DURATION_SEC } from '../../src/audio';
-import { getLyrics, type LyricWord } from '../../src/lyrics';
+import { getLyrics, type LyricLine } from '../../src/lyrics';
+
+const LYRICS_PANEL_HEIGHT = 240;
 
 const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
@@ -219,7 +221,7 @@ export default function PracticePlayer() {
         </GlassCard>
 
         {/* Lyrics */}
-        <LyricsPanel words={lyrics} activeIndex={activeLyricIndex} onWordPress={seekTo} />
+        <LyricsPanel lines={lyrics} activeIndex={activeLyricIndex} onLinePress={seekTo} />
 
         {/* Tempo control */}
         <GlassCard style={styles.controlCard}>
@@ -280,42 +282,56 @@ function SimpleBar({ value }: { value: number }) {
   );
 }
 
+// Spotify-style lyrics panel: a fixed-height scroll region where only the
+// current line is large/bright, past and upcoming lines stay dim, the view
+// auto-scrolls to keep the current line in the same spot as it advances,
+// and tapping any line seeks the track there.
 function LyricsPanel({
-  words,
+  lines,
   activeIndex,
-  onWordPress,
+  onLinePress,
 }: {
-  words: LyricWord[];
+  lines: LyricLine[];
   activeIndex: number;
-  onWordPress: (time: number) => void;
+  onLinePress: (time: number) => void;
 }) {
-  const lines: LyricWord[][] = [];
-  words.forEach((w) => {
-    if (!lines[w.line]) lines[w.line] = [];
-    lines[w.line].push(w);
-  });
+  const scrollRef = useRef<ScrollView>(null);
+  const offsets = useRef<number[]>([]);
 
-  let globalIndex = -1;
+  useEffect(() => {
+    const y = offsets.current[activeIndex];
+    if (y == null) return;
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - LYRICS_PANEL_HEIGHT / 2 + 14), animated: true });
+  }, [activeIndex]);
+
   return (
     <GlassCard style={{ marginTop: spacing.lg, padding: spacing.lg }} testID="lyrics-panel">
       <SectionLabel>Lyrics</SectionLabel>
-      <Muted style={{ marginTop: 2 }}>Tap a word to jump there</Muted>
-      <View style={{ marginTop: spacing.md }}>
-        {lines.map((line, li) => (
-          <View key={li} style={styles.lyricLine}>
-            {line.map((w) => {
-              globalIndex += 1;
-              const i = globalIndex;
-              const active = i === activeIndex;
-              return (
-                <Pressable key={i} testID={`lyric-word-${i}`} onPress={() => onWordPress(w.time)} hitSlop={4}>
-                  <Text style={[styles.lyricWord, active && styles.lyricWordActive]}>{w.text} </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        ))}
-      </View>
+      <Muted style={{ marginTop: 2 }}>Tap a line to jump there</Muted>
+      <ScrollView
+        ref={scrollRef}
+        style={{ height: LYRICS_PANEL_HEIGHT, marginTop: spacing.md }}
+        showsVerticalScrollIndicator={false}
+      >
+        {lines.map((line, i) => {
+          const active = i === activeIndex;
+          return (
+            <Pressable
+              key={i}
+              testID={`lyric-line-${i}`}
+              onPress={() => onLinePress(line.time)}
+              onLayout={(e) => {
+                offsets.current[i] = e.nativeEvent.layout.y;
+              }}
+              style={styles.lyricLineRow}
+            >
+              <Text testID={`lyric-line-text-${i}`} style={[styles.lyricLine, active && styles.lyricLineActive]}>
+                {line.text}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
     </GlassCard>
   );
 }
@@ -339,9 +355,9 @@ const styles = StyleSheet.create({
   playBig: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
   loopState: { color: colors.textFaint, fontSize: fontSize.xs, textAlign: 'center', marginTop: spacing.md },
 
-  lyricLine: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.xs },
-  lyricWord: { color: colors.textFaint, fontSize: fontSize.md, lineHeight: 26 },
-  lyricWordActive: { color: colors.primaryBright, fontWeight: fontWeight.bold },
+  lyricLineRow: { paddingVertical: 10 },
+  lyricLine: { color: colors.textFaint, fontSize: fontSize.md, lineHeight: 24, fontWeight: fontWeight.medium },
+  lyricLineActive: { color: colors.text, fontSize: fontSize.xl, lineHeight: 30, fontWeight: fontWeight.bold },
 
   controlCard: { marginTop: spacing.lg, padding: spacing.lg },
   controlHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },

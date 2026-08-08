@@ -68,17 +68,23 @@ test.describe('Practice player', () => {
     await expect(page.getByTestId('practice-position')).toHaveText(/2:0[5-9]|2:1[0-3]/);
   });
 
-  test('lyrics panel highlights and seeks on word tap', async ({ page }) => {
+  test('lyrics panel highlights and seeks on line tap', async ({ page }) => {
     await expect(page.getByTestId('lyrics-panel')).toBeVisible();
-    await expect(page.getByTestId('lyric-word-0')).toBeVisible();
+    await expect(page.getByTestId('lyric-line-0')).toBeVisible();
 
-    await page.getByTestId('lyric-word-5').click();
-    const posAfterFirstWord = await page.getByTestId('practice-position').textContent();
+    await page.getByTestId('lyric-line-2').click();
+    const posAfterEarlyLine = await page.getByTestId('practice-position').textContent();
     await expect(page.getByTestId('practice-position')).not.toHaveText('0:00');
 
-    // A later word should seek further into the track.
-    await page.getByTestId('lyric-word-20').click();
-    const posAfterLaterWord = await page.getByTestId('practice-position').textContent();
-    expect(posAfterLaterWord).not.toBe(posAfterFirstWord);
+    // A later line should seek further into the track.
+    await page.getByTestId('lyric-line-6').click();
+    const posAfterLaterLine = await page.getByTestId('practice-position').textContent();
+    expect(posAfterLaterLine).not.toBe(posAfterEarlyLine);
+  });
+
+  test('only the current lyric line is highlighted as the track advances', async ({ page }) => {
+    await page.getByTestId('lyric-line-3').click();
+    await expect(page.getByTestId('lyric-line-text-3')).toHaveCSS('font-weight', '700');
+    await expect(page.getByTestId('lyric-line-text-0')).not.toHaveCSS('font-weight', '700');
   });
 });
