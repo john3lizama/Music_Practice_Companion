@@ -87,4 +87,70 @@ test.describe('Practice player', () => {
     await expect(page.getByTestId('lyric-line-text-3')).toHaveCSS('font-weight', '700');
     await expect(page.getByTestId('lyric-line-text-0')).not.toHaveCSS('font-weight', '700');
   });
+
+  test('reaching the end of the track and pressing play again restarts from 0', async ({ page }) => {
+    await page.goto('/practice/song-blackbird'); // shorter (2:18) so skip-forward reaches the end fast
+    await expect(page.getByTestId('practice-screen')).toBeVisible();
+    await page.getByTestId('practice-play-toggle').click();
+
+    for (let i = 0; i < 16; i++) {
+      await page.getByTestId('skip-forward').click();
+    }
+    await expect(page.getByTestId('practice-position')).toHaveText('2:18');
+
+    // Regression: pressing play at end-of-track used to get immediately
+    // flipped back to paused by the very next tick, since `pos` never left
+    // `durationSec` — looked like playback was permanently stuck/broken.
+    await page.getByTestId('practice-play-toggle').click();
+    await page.waitForTimeout(700);
+    const pos = await page.getByTestId('practice-position').textContent();
+    expect(pos).not.toBe('2:18');
+  });
+
+  test('the highlighted chord cycles with the 16s audio loop, not once per song', async ({ page }) => {
+    // Wonderwall's progression is Em7/G/Dsus4/A7sus4, 4s each within the loop.
+    const box = await page.getByTestId('practice-progress').boundingBox();
+    if (!box) throw new Error('seek bar not found');
+    const durationSec = 258;
+
+    async function activeChordAt(sec: number) {
+      await page.mouse.click(box!.x + box!.width * (sec / durationSec), box!.y + box!.height / 2);
+      await page.getByTestId('practice-play-toggle').click();
+      await page.waitForTimeout(120);
+      const text = await page.evaluate(() => {
+        const beats = Array.from(document.querySelectorAll('[data-testid^="beat-"]')) as HTMLElement[];
+        // The active beat is the one whose chord text renders in bright white.
+        const active = beats.find((b) => getComputedStyle(b.querySelector('span, div')!).color === 'rgb(255, 255, 255)');
+        return active?.textContent ?? null;
+      });
+      await page.getByTestId('practice-play-toggle').click();
+      return text;
+    }
+
+    await expect(page.getByTestId('practice-position')).toBeVisible();
+    const early = await activeChordAt(1);
+    const later = await activeChordAt(13);
+    expect(early).not.toBe(later);
+  });
+
+  test('volume slider is collapsed until hovered, and mute toggles', async ({ page }) => {
+    await expect(page.getByTestId('volume-slider-wrap')).toHaveCount(0);
+
+    const box = await page.getByTestId('volume-hover-zone').boundingBox();
+    if (!box) throw new Error('volume hover zone not found');
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
+    await expect(page.getByTestId('volume-control')).toBeVisible();
+
+    await page.mouse.move(10, 10);
+    await expect(page.getByTestId('volume-slider-wrap')).toHaveCount(0);
+
+    await page.getByTestId('volume-mute-toggle').click();
+    await page.getByTestId('volume-mute-toggle').click(); // toggle twice — just verify it doesn't crash the screen
+    await expect(page.getByTestId('practice-screen')).toBeVisible();
+  });
+
+  test('logo in the header navigates to the home tab', async ({ page }) => {
+    await page.getByTestId('practice-logo-home').click();
+    await expect(page.getByTestId('discover-screen')).toBeVisible();
+  });
 });
