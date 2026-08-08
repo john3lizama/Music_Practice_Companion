@@ -232,10 +232,6 @@ export function Seekbar({
     (end ? onSeekEnd : onSeek)?.(percent);
   };
 
-  // react-native-web passes plain DOM events like onClick through, but the
-  // RN View type doesn't declare it — cast the extra web-only handler in via `any`.
-  const webFallback: any = { onClick: (e: any) => handleTouch(e, true) };
-
   return (
     <View
       testID={testID}
@@ -247,7 +243,6 @@ export function Seekbar({
       onResponderGrant={(e) => handleTouch(e, false)}
       onResponderMove={(e) => handleTouch(e, false)}
       onResponderRelease={(e) => handleTouch(e, true)}
-      {...webFallback}
       hitSlop={{ top: 14, bottom: 14 }}
       style={{ width: '100%', height: Math.max(height, 14), justifyContent: 'center' }}
     >
