@@ -7,8 +7,6 @@
  * (see src/api.ts).
  */
 
-import type { PadKey } from './audio';
-
 export type Instrument = 'Guitar' | 'Vocals' | 'Piano' | 'Bass';
 export type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
 
@@ -38,10 +36,9 @@ export interface Song {
   plays: number;
   learners: number;
   notations: Notation[];
-  // A tiny chord-progression snippet used by the practice player UI.
+  // A tiny chord-progression snippet used by the practice player UI (and,
+  // via src/audio.ts, by the placeholder audio that plays it).
   progression: { label: string; chord: string }[];
-  // Which placeholder pad loop the practice player plays for this song (see src/audio.ts).
-  pad: PadKey;
 }
 
 export interface AnalysisResult {
@@ -117,7 +114,6 @@ export const songs: Song[] = [
       { label: 'V', chord: 'Dsus4' },
       { label: 'ii', chord: 'A7sus4' },
     ],
-    pad: 'pad-bright',
     notations: [
       { id: 'n1', type: 'Chords', contributor: 'rhythmcat', rating: 4.8, votes: 2103, verified: true, updatedAt: '2026-04-12' },
       { id: 'n2', type: 'Tab', contributor: 'sixstring_sam', rating: 4.5, votes: 880, verified: true, updatedAt: '2026-03-01' },
@@ -145,7 +141,6 @@ export const songs: Song[] = [
       { label: 'I/B', chord: 'G/B' },
       { label: 'IV', chord: 'C' },
     ],
-    pad: 'pad-warm',
     notations: [
       { id: 'n4', type: 'Tab', contributor: 'fingerstyle_fi', rating: 4.9, votes: 3401, verified: true, updatedAt: '2026-05-02' },
       { id: 'n5', type: 'Sheet', contributor: 'maestro_k', rating: 4.6, votes: 612, verified: true, updatedAt: '2026-02-18' },
@@ -172,7 +167,6 @@ export const songs: Song[] = [
       { label: 'vi', chord: 'F#m' },
       { label: 'IV', chord: 'D' },
     ],
-    pad: 'pad-mellow',
     notations: [
       { id: 'n6', type: 'Sheet', contributor: 'keys_by_kai', rating: 4.7, votes: 1990, verified: true, updatedAt: '2026-04-29' },
       { id: 'n7', type: 'Chords', contributor: 'rhythmcat', rating: 4.3, votes: 720, verified: false, updatedAt: '2026-03-15' },
@@ -199,7 +193,6 @@ export const songs: Song[] = [
       { label: 'vi', chord: 'Em' },
       { label: 'IV', chord: 'C' },
     ],
-    pad: 'pad-warm',
     notations: [
       { id: 'n8', type: 'Chords', contributor: 'island_strings', rating: 4.6, votes: 1120, verified: true, updatedAt: '2026-04-01' },
     ],
@@ -225,7 +218,6 @@ export const songs: Song[] = [
       { label: 'IV', chord: 'C' },
       { label: 'iv', chord: 'Cm' },
     ],
-    pad: 'pad-minor',
     notations: [
       { id: 'n9', type: 'Chords', contributor: 'rhythmcat', rating: 4.7, votes: 1503, verified: true, updatedAt: '2026-05-10' },
       { id: 'n10', type: 'Tab', contributor: 'sixstring_sam', rating: 4.2, votes: 410, verified: false, updatedAt: '2026-02-02' },
@@ -252,7 +244,6 @@ export const songs: Song[] = [
       { label: 'vi', chord: 'F#m' },
       { label: 'I/V', chord: 'A/E' },
     ],
-    pad: 'pad-mellow',
     notations: [
       { id: 'n11', type: 'Tab', contributor: 'fingerstyle_fi', rating: 4.8, votes: 2210, verified: true, updatedAt: '2026-04-20' },
     ],
