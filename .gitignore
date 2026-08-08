@@ -17,6 +17,8 @@ api/app/core/temp_folder/
 *.wav
 *.mp3
 *.m4a
+# ...except the bundled placeholder practice-player audio (checked-in assets, not generated output).
+!frontend/assets/audio/*.m4a
 
 # OS
 .DS_Store
