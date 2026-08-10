@@ -133,24 +133,67 @@ test.describe('Practice player', () => {
     expect(early).not.toBe(later);
   });
 
-  test('volume slider is collapsed until hovered, and mute toggles', async ({ page }) => {
-    await expect(page.getByTestId('volume-slider-wrap')).toHaveCount(0);
+  test('volume slider space is reserved but hidden until hovered, and mute toggles', async ({ page }) => {
+    // The wrapper is always mounted (fixed width) so revealing it never
+    // shifts the other transport buttons — only its opacity/interactivity
+    // toggle with hover.
+    await expect(page.getByTestId('volume-slider-wrap')).toHaveCSS('opacity', '0');
 
     const box = await page.getByTestId('volume-hover-zone').boundingBox();
     if (!box) throw new Error('volume hover zone not found');
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
+    await expect(page.getByTestId('volume-slider-wrap')).toHaveCSS('opacity', '1');
     await expect(page.getByTestId('volume-control')).toBeVisible();
 
     await page.mouse.move(10, 10);
-    await expect(page.getByTestId('volume-slider-wrap')).toHaveCount(0);
+    await expect(page.getByTestId('volume-slider-wrap')).toHaveCSS('opacity', '0');
 
     await page.getByTestId('volume-mute-toggle').click();
     await page.getByTestId('volume-mute-toggle').click(); // toggle twice — just verify it doesn't crash the screen
     await expect(page.getByTestId('practice-screen')).toBeVisible();
   });
 
+  test('the transport row (including volume) never overflows on a narrow/mobile viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/practice/song-wonderwall');
+    await expect(page.getByTestId('practice-screen')).toBeVisible();
+
+    for (const id of ['practice-restart', 'skip-back', 'practice-play-toggle', 'skip-forward', 'practice-loop-toggle', 'volume-mute-toggle']) {
+      const box = await page.getByTestId(id).boundingBox();
+      expect(box, `${id} should have a layout box`).toBeTruthy();
+      expect(box!.x, `${id} should not be clipped off the left edge`).toBeGreaterThanOrEqual(0);
+    }
+  });
+
   test('logo in the header navigates to the home tab', async ({ page }) => {
     await page.getByTestId('practice-logo-home').click();
     await expect(page.getByTestId('discover-screen')).toBeVisible();
+  });
+});
+
+test.describe('Practice player — touch device (no hover)', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+
+  test('volume slider is shown outright since there is no hover to reveal it', async ({ page }) => {
+    await page.goto('/practice/song-wonderwall');
+    await expect(page.getByTestId('practice-screen')).toBeVisible();
+    await expect(page.getByTestId('volume-slider-wrap')).toHaveCSS('opacity', '1');
+    await expect(page.getByTestId('volume-control')).toBeVisible();
+  });
+});
+
+test.describe('Practice player — wide desktop layout', () => {
+  test.use({ viewport: { width: 1400, height: 900 } });
+
+  test('lyrics sit beside the controls and the whole player fits without scrolling', async ({ page }) => {
+    await page.goto('/practice/song-wonderwall');
+    await expect(page.getByTestId('practice-screen')).toBeVisible();
+    await expect(page.getByTestId('lyrics-panel')).toBeVisible();
+
+    const { scrollHeight, viewportHeight } = await page.evaluate(() => ({
+      scrollHeight: document.documentElement.scrollHeight,
+      viewportHeight: window.innerHeight,
+    }));
+    expect(scrollHeight).toBeLessThanOrEqual(viewportHeight);
   });
 });
