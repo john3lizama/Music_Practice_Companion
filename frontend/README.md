@@ -7,9 +7,12 @@ A premium, cross-platform frontend for the AI Music Practice Companion, built wi
 Dark, Apple-grade aesthetic: near-black violet base, purple accent ramp, glass
 surfaces, gradient CTAs, and soft glow.
 
-> All data is currently **mock data** served through an async API layer
-> (`src/api.ts`) so every feature is fully interactive and testable before the
-> FastAPI backend is wired up.
+> Auth, the analyze pipeline, and practice-session history call the real FastAPI
+> backend through `src/api.ts` (with a mock-data fallback when it's unreachable,
+> so the app and Playwright still work offline). The song catalog, social feed,
+> and practice-player audio/lyrics are still **mock/placeholder data** — see
+> `src/mockData.ts`, `src/audio.ts`, `src/lyrics.ts` — pending a real content
+> pipeline.
 
 ---
 
@@ -69,7 +72,7 @@ npx serve dist       # serve it for Playwright in CI
 | `/feed` | `app/(tabs)/feed.tsx` | Social performance feed + likes |
 | `/profile` | `app/(tabs)/profile.tsx` | Profile, streak, badges |
 | `/song/[id]` | `app/song/[id].tsx` | Song detail, notations, progression |
-| `/practice/[id]` | `app/practice/[id].tsx` | Interactive player: play, tempo, loop, transpose |
+| `/practice/[id]` | `app/practice/[id].tsx` | Practice player: real audio playback (expo-av), seek/skip, tempo/transpose, chord-synced Spotify-style lyrics, volume, responsive layout |
 
 ---
 
@@ -81,13 +84,17 @@ frontend/
 │   ├── _layout.tsx           # Root stack + providers
 │   ├── (tabs)/_layout.tsx    # Bottom tab navigation
 │   └── (auth)/_layout.tsx
+├── assets/audio/             # Synthesized placeholder practice-player audio (~60-70KB each)
+├── tests/                    # Playwright specs (36 tests)
 └── src/
     ├── theme.ts              # Design tokens (colors, gradients, spacing, type)
-    ├── mockData.ts           # Songs, notations, performances, analyses, user
-    ├── api.ts                # Async API layer (returns mock data today)
+    ├── mockData.ts           # Songs, notations, performances, analyses, user (mock)
+    ├── lyrics.ts              # Placeholder practice-player lyrics, line-timed (mock)
+    ├── audio.ts               # Maps each song to its placeholder audio loop
+    ├── api.ts                # Real fetch calls (auth/analyze/sessions) + mock fallback
     └── components/
         ├── Background.tsx     # Gradient backdrop + glow
-        ├── ui.tsx             # Button, GlassCard, Pill, ProgressBar, H1/H2…
+        ├── ui.tsx             # Button, GlassCard, Pill, Seekbar, ProgressBar, H1/H2…
         └── charts.tsx         # ScoreDial, DeviationChart, MiniBars
 ```
 
@@ -107,8 +114,11 @@ export async function listSongs(query?: string) {
 }
 ```
 
-`analyzeRecording` maps to the planned `POST /api/analyze`, `toggleLike` maps to
-`POST /votes`, and `login`/`register` map to the existing auth routes.
+`login`, `register`, `analyzeRecording`, and `listAnalyses` already call the real
+backend (`POST /login`, `POST /users/`, `POST /analyze`, `GET /practice/sessions`)
+with a mock-data fallback when it's unreachable. `listSongs`/`getSong`,
+`listPerformances`, and `toggleLike` are still mock-only — the song catalog and
+social feed don't have a backend yet.
 
 ---
 
@@ -147,11 +157,14 @@ version.
 `open-practice`, `open-analyze-from-song`, `prog-<i>`, `notation-list`,
 `notation-<id>`.
 
-**Practice player** — `practice-screen`, `practice-back`,
-`practice-song-title`, `beat-<i>`, `practice-position`, `practice-progress`,
-`practice-play-toggle`, `practice-restart`, `practice-loop-toggle`,
+**Practice player** — `practice-screen`, `practice-back`, `practice-logo-home`,
+`practice-song-title`, `beat-<i>`, `practice-position`, `practice-progress`
+(draggable/clickable seek bar), `practice-play-toggle`, `practice-restart`,
+`skip-back`, `skip-forward` (±10s), `practice-loop-toggle`,
 `practice-loop-state`, `tempo-value`, `tempo-up`, `tempo-down`,
-`transpose-value`, `transpose-key`, `transpose-up`, `transpose-down`.
+`transpose-value`, `transpose-key`, `transpose-up`, `transpose-down`,
+`volume-mute-toggle`, `volume-hover-zone`, `volume-slider-wrap`,
+`volume-control`, `lyrics-panel`, `lyric-line-<i>`, `lyric-line-text-<i>`.
 
 **Analyze** — `analyze-screen`, `uploader`, `pick-file`, `file-name`,
 `instrument-vocals|guitar|piano|bass`, `run-analysis`, `analyzing-indicator`,
